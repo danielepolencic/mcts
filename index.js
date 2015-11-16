@@ -1,22 +1,23 @@
 'use strict';
 
-const root = {
+const container = document.querySelector('.game');
+
+let state = {
   id: 0,
   parent: 0,
   children: [],
   count: [1, 1],
   score: [0, 0],
   player: [1, 1],
-  reward: [2, 3],
+  reward: [4, 6],
   ghost: [5, 3],
   lastMove: 'player'
 };
-
-let tree = [root];
+let tree = [state];
 
 const createChildNode = (node, type) => (player, ghost) => {
   return {
-    id: void 0,
+    id: 0,
     parent: node.id,
     children: [],
     count: [1, 1],
@@ -56,13 +57,31 @@ const updatePlayerWithScore = (score) => (node) => {
   };
 };
 
-function select (root, policy) {
-  const children = root.children;
-  if (children.length === 0) return [root];
+const updatePlayerWithPosition = (position) => (node) => {
+  return {
+    id: node.id,
+    parent: node.parent,
+    children: node.children.slice(),
+    count: node.count.slice(),
+    score: node.score.slice(),
+    reward: node.reward.slice(),
+    ghost: node.ghost.slice(),
+    player: position,
+    lastMove: node.lastMove
+  };
+}
 
-  const child = policy(root, children.map(getNode));
+function select (tree) {
+  const get = getNode(tree);
 
-  return [root].concat(select(child, policy));
+  return function selectChild (root, policy) {
+    const children = root.children;
+    if (children.length === 0) return [root];
+
+    const child = policy(root, children.map(get));
+
+    return [root].concat(selectChild(child, policy));
+  }
 }
 
 function expandPlayer (node) {
@@ -190,18 +209,20 @@ const insertTree = (tree) => {
   };
 };
 
-const getNode = (nodeId) => tree[nodeId];
+const getNode = (tree) => (nodeId) => tree[nodeId];
 
-for (let i = 0; i < 5000; i++) {
-  let player = Math.random() > 0.5 ? 'ghost' : 'player';
+function computeTree (root) {
+  let tree = [root];
+  for (let i = 0; i < 10; i++) {
+    let player = Math.random() > 0.5 ? 'ghost' : 'player';
 
-  let seq = select(tree[0], player === 'ghost' ? uctGhost : uctPlayer);
-  let leaf = seq.slice(-1)[0];
+    let seq = select(tree)(tree[0], player === 'ghost' ? uctGhost : uctPlayer);
+    let leaf = seq.slice(-1)[0];
 
-  switch (leaf.lastMove) {
+    switch (leaf.lastMove) {
 
-    case 'ghost':
-      if (!isFirstGhostSimulation(leaf) && isTerminal(leaf)) continue;
+      case 'ghost':
+        if (!isFirstGhostSimulation(leaf) && isTerminal(leaf)) continue;
       if (isFirstGhostSimulation(leaf)) {
         const score = simulation(leaf);
         backpropagationGhost(seq, score).forEach(updateTree(tree));
@@ -210,8 +231,8 @@ for (let i = 0; i < 5000; i++) {
       }
       break;
 
-    case 'player':
-      if (!isFirstPlayerSimulation(leaf) && isTerminal(leaf)) continue;
+      case 'player':
+        if (!isFirstPlayerSimulation(leaf) && isTerminal(leaf)) continue;
       if (isFirstPlayerSimulation(leaf)) {
         const score = simulation(leaf);
         backpropagationPlayer(seq, score).forEach(updateTree(tree));
@@ -220,16 +241,85 @@ for (let i = 0; i < 5000; i++) {
       }
       break;
 
+    }
   }
+  return tree;
 }
 
-const findBestMove = (root) => {
-  const children = root.children;
+const render = (element, state) => {
+  const board = new Array(64).join(',').split(',');
+  const player = state.player[0] + 8 * state.player[1];
+  const ghost = state.ghost[0] + 8 * state.ghost[1];
+  const reward = state.reward[0] + 8 * state.reward[1];
+  element.innerHTML = board.map((_, index) => {
+    if (index === player) return '<div>P</div>';
+    if (index === ghost) return '<div>G</div>';
+    if (index === reward) return '<div>R</div>';
+    return '<div></div>';
+  }).join('');
+};
+
+const findBestMove = (tree) => {
+  const children = tree[0].children;
   if (children.length === 0) return root;
 
-  const scores = children.map(getNode)
+  const scores = children.map(getNode(tree))
     .map((child) => child.score[1] / child.count[1]);
   const bestScore = Math.max.apply(null, scores);
   const index = scores.findIndex((score) => score === bestScore);
-  return getNode(children[index]);
+  return getNode(tree)(children[index]);
 };
+
+document.addEventListener('keydown', (e) => {
+  if (e.keyCode > 40 || e.keyCode < 37) return;
+  e.preventDefault();
+
+  let newState = void 0;
+
+  switch (e.keyCode) {
+    case 37:
+      if (canMoveLeft(state)) newState = moveLeft(state);
+      break;
+    case 38:
+      if (canMoveUp(state)) newState = moveUp(state);
+      break;
+    case 39:
+      if (canMoveRight(state)) newState = moveRight(state);
+      break;
+    case 40:
+      if (canMoveDown(state)) newState = moveDown(state);
+      break;
+  }
+
+  if (!!newState) {
+    const newTree = computeTree(newState);
+    const bestState = findBestMove(newTree);
+    render(container, bestState);
+
+    update(generateGraph(Object.assign({}, newTree))(0));
+
+    tree = newTree;
+    state = bestState;
+  }
+});
+
+render(container, state);
+update(generateGraph(Object.assign({}, [state])));
+
+const canMoveDown = (state) => state.player[1] < 7;
+const canMoveUp = (state) => state.player[1] > 0;
+const canMoveLeft = (state) => state.player[0] > 0;
+const canMoveRight = (state) => state.player[0] < 7;
+
+const moveLeft = (state) => createChildNode(state, 'player')([
+  state.player[0] - 1, state.player[1]
+], state.ghost.slice());
+const moveRight = (state) => createChildNode(state, 'player')([
+  state.player[0] + 1, state.player[1]
+], state.ghost.slice());
+const moveUp = (state) => createChildNode(state, 'player')([
+  state.player[0], state.player[1] - 1
+], state.ghost.slice());
+const moveDown = (state) => createChildNode(state, 'player')([
+  state.player[0], state.player[1] + 1
+], state.ghost.slice());

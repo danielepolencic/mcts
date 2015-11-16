@@ -1,15 +1,15 @@
-const generateGraph = (rootId) => {
-  const root = tree[rootId];
-  if (root.children.length === 0) return root;
-  return Object.assign({}, root, {children: root.children.map(generateGraph)});
+const generateGraph = (tree) => {
+  return function getNode (rootId) {
+    const root = tree[rootId];
+    if (root.children.length === 0) return root;
+    return Object.assign({}, root, {children: root.children.map(getNode)});
+  }
 }
-
-const data = generateGraph(0);
 
 // ************** Generate the tree diagram  *****************
 var margin = {top: 20, right: 120, bottom: 20, left: 120},
-  width = 10000 - margin.right - margin.left,
-  height = 5000 - margin.top - margin.bottom;
+  width = 900 - margin.right - margin.left,
+  height = 400 - margin.top - margin.bottom;
 
 var i = 0;
 
@@ -24,8 +24,6 @@ var svg = d3.select("body").append("svg")
   .attr("height", height + margin.top + margin.bottom)
   .append("g")
   .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-update(data);
 
 function update(source) {
 
