@@ -8,9 +8,9 @@ let state = {
   children: [],
   count: [1, 1],
   score: [0, 0],
-  player: [1, 1],
-  reward: [4, 6],
-  ghost: [5, 3],
+  player: [0, 4],
+  reward: [6, 6],
+  ghost: [7, 0],
   lastMove: 'player'
 };
 let tree = [state];
@@ -92,19 +92,19 @@ function expandPlayer (node) {
   const ghost = node.ghost;
 
   // move right
-  if ((x + 1) % 8 !== 0)
+  if (x < 7)
     children.push(create([x + 1, y], ghost));
 
   // move down
-  if ((y + 8) < 64)
+  if (y < 7)
     children.push(create([x, y + 1], ghost));
 
   // move left
-  if ((x - 1) > 0 && (x - 1) % 7 !== 0)
+  if (x > 0)
     children.push(create([x - 1, y], ghost));
 
   // move up
-  if ((y - 8) > 0)
+  if (y > 0)
     children.push(create([x, y - 1], ghost));
 
   return children;
@@ -118,19 +118,19 @@ function expandGhost (node) {
   const player = node.player;
 
   // move right
-  if ((x + 1) % 8 !== 0)
+  if (x < 7)
     children.push(create(player, [x + 1, y]));
 
   // move down
-  if ((y + 8) < 64)
+  if (y < 7)
     children.push(create(player, [x, y + 1]));
 
   // move left
-  if ((x - 1) > 0 && (x - 1) % 7 !== 0)
+  if (x > 0)
     children.push(create(player, [x - 1, y]));
 
   // move up
-  if ((y - 8) > 0)
+  if (y > 0)
     children.push(create(player, [x, y - 1]));
 
   return children;
@@ -213,7 +213,7 @@ const getNode = (tree) => (nodeId) => tree[nodeId];
 
 function computeTree (root) {
   let tree = [root];
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 10000; i++) {
     let player = Math.random() > 0.5 ? 'ghost' : 'player';
 
     let seq = select(tree)(tree[0], player === 'ghost' ? uctGhost : uctPlayer);
@@ -261,7 +261,7 @@ const render = (element, state) => {
 
 const findBestMove = (tree) => {
   const children = tree[0].children;
-  if (children.length === 0) return root;
+  if (children.length === 0) return tree[0];
 
   const scores = children.map(getNode(tree))
     .map((child) => child.score[1] / child.count[1]);
@@ -292,19 +292,26 @@ document.addEventListener('keydown', (e) => {
   }
 
   if (!!newState) {
-    const newTree = computeTree(newState);
-    const bestState = findBestMove(newTree);
-    render(container, bestState);
+    render(container, newState);
+    setTimeout(() => {
+      const newTree = computeTree(newState);
+      const bestState = findBestMove(newTree);
+      render(container, bestState);
 
-    update(generateGraph(Object.assign({}, newTree))(0));
+      const treeCopy = newTree.map((node) => Object.assign({}, node));
+      destroy();
+      create();
+      update(generateGraph(treeCopy)(0));
 
-    tree = newTree;
-    state = bestState;
+      tree = newTree;
+      state = bestState;
+    }, 0);
   }
 });
 
 render(container, state);
-update(generateGraph(Object.assign({}, [state])));
+create();
+update(generateGraph([Object.assign({}, state)])(0));
 
 const canMoveDown = (state) => state.player[1] < 7;
 const canMoveUp = (state) => state.player[1] > 0;
