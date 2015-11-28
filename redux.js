@@ -246,16 +246,16 @@ function selectState (entity) {
   return {type: SELECT_NODE, entity};
 }
 
-function expandState (entity) {
-  return {type: EXPAND_STATE, entity};
+function expandState () {
+  return {type: EXPAND_STATE};
 }
 
 function simulate () {
   return {type: SIMULATE};
 }
 
-function backpropagate (entity) {
-  return {type: BACKPROPAGATE, entity};
+function backpropagate () {
+  return {type: BACKPROPAGATE};
 }
 
 function predictionReducer (gameReducer, UCT) {
@@ -264,19 +264,11 @@ function predictionReducer (gameReducer, UCT) {
       case SELECT_NODE:
         return selectReducer(state, UCT(action.entity));
       case EXPAND_STATE:
-        const childStates = ['up', 'down', 'right', 'left'].map((direction) => {
-          const message = moveEntity(action.entity, direction);
-          const childState = state.tree[state.selected].state;
-          return gameReducer(childState, message);
-        });
-        return expandReducer(state, childStates);
+        return expandReducer(state);
       case SIMULATE:
-        const childState = state.tree[state.selected].state;
-        // TODO: don't play if 1) game over & 2) already backpropagated for
-        // current player
-        return simulationReducer(state, gameReducer(childState, updateWinners()));
+        return simulationReducer(state);
       case BACKPROPAGATE:
-        return backpropagationReducer(state, action.entity);
+        return backpropagationReducer(state);
       default:
         return state;
     }
@@ -323,11 +315,22 @@ function UCT (entity) {
   };
 }
 
-function expandReducer (state, childStates) {
+function expandReducer (state) {
   const tree = cloneTree(state.tree);
   const selected = tree[state.selected];
+  const entity = query(selected.state)(['active']).filter((entity) => {
+    return !get(selected.state)(entity, 'active');
+  })[0];
+  const childStates = ['up', 'down', 'right', 'left'].map((direction) => {
+    const message = moveEntity(entity, direction);
+    const childState = state.tree[state.selected].state;
+    return gameReducer(gameReducer(childState, entityTurn(entity)), message);
+  });
   const childNodes = childStates.filter((childState) => {
-    return childState !== selected.state;
+    return get(childState)('ghost', 'x') !== get(selected.state)('ghost', 'x') ||
+      get(childState)('ghost', 'y') !== get(selected.state)('ghost', 'y') ||
+      get(childState)('hero', 'x') !== get(selected.state)('hero', 'x') ||
+      get(childState)('hero', 'y') !== get(selected.state)('hero', 'y');
   })
   .map((child) => node(state.selected, child))
   .map((node) => tree.push(node) - 1);
@@ -337,26 +340,35 @@ function expandReducer (state, childStates) {
   return {selected: state.selected, tree};
 };
 
-function simulationReducer (state, child) {
+function simulationReducer (state) {
+  const childState = state.tree[state.selected].state;
+  const child = gameReducer(childState, updateWinners());
   const tree = cloneTree(state.tree);
   tree[state.selected].state = child;
 
   return {selected: state.selected, tree};
 }
 
-function backpropagationReducer (state, entity) {
+function backpropagationReducer (state) {
   const tree = cloneTree(state.tree);
   const getNode = (id) => state.tree[id];
 
-  function updateScore (node, score) {
-    node.score[entity] = (node.score[entity] | 0) + score;
+  const selected = state.tree[state.selected];
+  const entities = query(selected.state)(['score']);
+  const entity = query(selected.state)(['active']).filter((entity) => {
+    return get(selected.state)(entity, 'active');
+  })[0];
+  updateScore(selected, selected.state);
+
+  function updateScore (node, state) {
+    entities.forEach((entity) => {
+      const score = get(state)(entity, 'score');
+      return node.score[entity] = (node.score[entity] | 0) + score;
+    });
     node.count[entity] = (node.count[entity] | 0) + 1;
     const parentNode = getNode(node.parentId);
-    if (parentNode) updateScore(parentNode, score);
+    if (parentNode) updateScore(parentNode, state);
   }
-
-  const selected = state.tree[state.selected];
-  updateScore(selected, get(selected.state)(entity, 'score'));
 
   return {selected: state.selected, tree};
 };
@@ -364,8 +376,11 @@ function backpropagationReducer (state, entity) {
 const predictionStore = createStore(predictionReducer(gameReducer, UCT), initialPredictionState);
 // predictionStore.subscribe((state) => console.log(JSON.stringify(state, null, 2)));
 predictionStore.subscribe((state) => console.log(state));
-predictionStore.dispatch(selectState('ghost'));
-predictionStore.dispatch(expandState('hero'));
-predictionStore.dispatch(selectState('hero'));
-predictionStore.dispatch(simulate());
-predictionStore.dispatch(backpropagate('hero'));
+
+function predictBestMove () {
+  const entity = Math.random() > 0.5 ? 'ghost' : 'player';
+  predictionStore.dispatch(selectState(entity));
+  predictionStore.dispatch(simulate());
+  predictionStore.dispatch(backpropagate());
+  predictionStore.dispatch(expandState());
+}
