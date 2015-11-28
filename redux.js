@@ -5,7 +5,7 @@ const initialGameState = [
   {entity: 'hero', name: 'count', count: 0},
   {entity: 'hero', name: 'score', score: 0},
   {entity: 'hero', name: 'player', playerName: 'pole'},
-  {entity: 'hero', name: 'target', target: 'ghost'},
+  {entity: 'hero', name: 'target', target: 'reward'},
   {entity: 'hero', name: 'active', active: false},
   {entity: 'hero', name: 'render', avatar: 'H'},
   {entity: 'ghost', name: 'position', x: 7, y: 0},
@@ -258,7 +258,7 @@ function backpropagate (entity) {
   return {type: BACKPROPAGATE, entity};
 }
 
-function predictionReducer (gameReducer) {
+function predictionReducer (gameReducer, UCT) {
   return (state, action) => {
     switch (action.type) {
       case SELECT_NODE:
@@ -338,8 +338,6 @@ function expandReducer (state, childStates) {
 };
 
 function simulationReducer (state, child) {
-  if (state.tree[state.selected].state === child) return state;
-
   const tree = cloneTree(state.tree);
   tree[state.selected].state = child;
 
@@ -363,7 +361,7 @@ function backpropagationReducer (state, entity) {
   return {selected: state.selected, tree};
 };
 
-const predictionStore = createStore(predictionReducer(gameReducer), initialPredictionState);
+const predictionStore = createStore(predictionReducer(gameReducer, UCT), initialPredictionState);
 // predictionStore.subscribe((state) => console.log(JSON.stringify(state, null, 2)));
 predictionStore.subscribe((state) => console.log(state));
 predictionStore.dispatch(selectState('ghost'));
