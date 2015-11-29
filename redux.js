@@ -1,14 +1,14 @@
 'use strict';
 
 const initialGameState = [
-  {entity: 'hero', name: 'position', x: 0, y: 4},
+  {entity: 'hero', name: 'position', x: 4, y: 6},
   {entity: 'hero', name: 'count', count: 0},
   {entity: 'hero', name: 'score', score: 0},
   {entity: 'hero', name: 'player', playerName: 'pole'},
   {entity: 'hero', name: 'target', target: 'reward'},
   {entity: 'hero', name: 'active', active: false},
   {entity: 'hero', name: 'render', avatar: 'H'},
-  {entity: 'ghost', name: 'position', x: 7, y: 0},
+  {entity: 'ghost', name: 'position', x: 6, y: 5},
   {entity: 'ghost', name: 'count', count: 0},
   {entity: 'ghost', name: 'score', score: 0},
   {entity: 'ghost', name: 'ai', aiName: 'terminator'},
@@ -307,9 +307,12 @@ function UCT (entity) {
     const totalScore = scores.reduce((total, score) => {return total + score}, 0);
 
     const normalisedScores = scores.map((score) => score / totalScore);
+    const cumulativeScores = normalisedScores.reduce((cumulative, score) => {
+      return [cumulative[0] + score, cumulative[1].concat(cumulative[0] + score)];
+    }, [0, []])[1];
 
-    const child = Math.max.apply(void 0, normalisedScores);
-    const index = normalisedScores.findIndex((score) => score === child);
+    const random = Math.random();
+    const index = cumulativeScores.findIndex((score) => score >= random);
 
     return children[index];
   };
@@ -375,12 +378,17 @@ function backpropagationReducer (state) {
 
 const predictionStore = createStore(predictionReducer(gameReducer, UCT), initialPredictionState);
 // predictionStore.subscribe((state) => console.log(JSON.stringify(state, null, 2)));
-predictionStore.subscribe((state) => console.log(state));
+// predictionStore.subscribe((state) => console.log(state));
 
 function predictBestMove () {
   const entity = Math.random() > 0.5 ? 'ghost' : 'player';
   predictionStore.dispatch(selectState(entity));
   predictionStore.dispatch(simulate());
+  // if not terminal
   predictionStore.dispatch(backpropagate());
   predictionStore.dispatch(expandState());
 }
+
+for (let i = 0; i < 50; i++) predictBestMove();
+create();
+update(generateGraph(predictionStore.getState())(0));

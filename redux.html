@@ -15,10 +15,31 @@
     height: 20px;
     outline: 1px solid black;
   }
+
+  svg {
+    margin: 0 auto;
+  }
+
+  .node circle {
+    fill: #fff;
+    stroke: black;
+    stroke-width: 1px;
+  }
+
+  .node text { font: 12px sans-serif; }
+  .node .antagonist { font-size: 8px; }
+
+  .link {
+    fill: none;
+    stroke: #ccc;
+    stroke-width: 2px;
+  }
   </style>
 </head>
 <body>
   <div class="container"></div>
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="graphRedux.js"></script>
   <script src="redux.js"></script>
   <script src="reduxTest.js"></script>
 </body>
