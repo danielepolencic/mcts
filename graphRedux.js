@@ -10,7 +10,7 @@ const generateGraph = (state) => {
 
 // ************** Generate the tree diagram  *****************
 var margin = {top: 50, right: 120, bottom: 20, left: 120},
-  width = 2000 - margin.right - margin.left,
+  width = 5000 - margin.right - margin.left,
   height = 5000 - margin.top - margin.bottom;
 
 var i = 0;

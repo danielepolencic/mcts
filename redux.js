@@ -2,14 +2,14 @@
 
 const initialGameState = [
   {entity: 'hero', name: 'position', x: 4, y: 6},
-  {entity: 'hero', name: 'count', count: 0},
+  {entity: 'hero', name: 'lastMove', move: 'up'},
   {entity: 'hero', name: 'score', score: 0},
   {entity: 'hero', name: 'player', playerName: 'pole'},
   {entity: 'hero', name: 'target', target: 'reward'},
   {entity: 'hero', name: 'active', active: false},
   {entity: 'hero', name: 'render', avatar: 'H'},
   {entity: 'ghost', name: 'position', x: 6, y: 5},
-  {entity: 'ghost', name: 'count', count: 0},
+  {entity: 'ghost', name: 'lastMove', move: 'up'},
   {entity: 'ghost', name: 'score', score: 0},
   {entity: 'ghost', name: 'ai', aiName: 'terminator'},
   {entity: 'ghost', name: 'target', target: 'hero'},
@@ -114,19 +114,19 @@ function motionReducer (state, entity, direction) {
       case 'up':
       case 0:
       case 38:
-        return set(state)(entity, 'y', (y) => y - 1);
+        return set(set(state)(entity, 'y', (y) => y - 1))(entity, 'move', () => 'up');
       case 'right':
       case 1:
       case 39:
-        return set(state)(entity, 'x', (x) => x + 1);
+        return set(set(state)(entity, 'x', (x) => x + 1))(entity, 'move', () => 'right');
       case 'down':
       case 2:
       case 40:
-        return set(state)(entity, 'y', (y) => y + 1);
+        return set(set(state)(entity, 'y', (y) => y + 1))(entity, 'move', () => 'down');
       case 'left':
       case 3:
       case 37:
-        return set(state)(entity, 'x', (x) => x - 1);
+        return set(set(state)(entity, 'x', (x) => x - 1))(entity, 'move', () => 'left');
     }
   }
 }
@@ -217,6 +217,14 @@ document.addEventListener('keydown', (e) => {
   store.dispatch(entityTurn(currentPlayer));
   store.dispatch(moveEntity(currentPlayer, e.keyCode));
   store.dispatch(updateWinners());
+
+  setTimeout(() => {
+    const move = get(moveAi(store.getState()).state)('ghost', 'move');
+    console.log('move: ', move);
+    store.dispatch(entityTurn('ghost'));
+    store.dispatch(moveEntity('ghost', move));
+    store.dispatch(updateWinners());
+  }, 10);
 });
 
 
@@ -376,19 +384,51 @@ function backpropagationReducer (state) {
   return {selected: state.selected, tree};
 };
 
-const predictionStore = createStore(predictionReducer(gameReducer, UCT), initialPredictionState);
+// const predictionStore = createStore(predictionReducer(gameReducer, UCT), initialPredictionState);
 // predictionStore.subscribe((state) => console.log(JSON.stringify(state, null, 2)));
 // predictionStore.subscribe((state) => console.log(state));
 
 function predictBestMove () {
-  const entity = Math.random() > 0.5 ? 'ghost' : 'player';
-  predictionStore.dispatch(selectState(entity));
+  predictionStore.dispatch(selectState(Math.random() > 0.5 ? 'ghost' : 'player'));
+
+  if (isGameOver(predictionStore.getState())) return;
+
   predictionStore.dispatch(simulate());
-  // if not terminal
   predictionStore.dispatch(backpropagate());
-  predictionStore.dispatch(expandState());
+
+  if (!isGameOver(predictionStore.getState()))
+    predictionStore.dispatch(expandState());
 }
 
-for (let i = 0; i < 50; i++) predictBestMove();
+function isGameOver (state) {
+  const gameState = state.tree[state.selected].state;
+
+  return query(gameState)(['score']).some((entity) => {
+    return get(gameState)(entity, 'score') === 1;
+  });
+}
+
+let predictionStore = void 0;
 create();
-update(generateGraph(predictionStore.getState())(0));
+function moveAi (state) {
+  const initialPredictionState = {
+    selected: void 0,
+    tree: [node(void 0, state)]
+  };
+  predictionStore = createStore(predictionReducer(gameReducer, UCT), initialPredictionState);
+  for (let i = 0; i < 1000; i++) predictBestMove();
+  // update(generateGraph(predictionStore.getState())(0));
+  return findBestMove(predictionStore.getState());
+}
+
+function findBestMove (state) {
+  const getNode = (id) => state.tree[id];
+  const children = state.tree[0].children;
+  if (children.length === 0) return state.tree[0];
+
+  const scores = children.map(getNode)
+    .map((child) => child.score.ghost / child.count.ghost);
+  const bestScore = Math.max.apply(null, scores);
+  const index = scores.findIndex((score) => score === bestScore);
+  return getNode(children[index]);
+}
