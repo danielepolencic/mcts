@@ -4,6 +4,18 @@
   <meta charset="UTF-8">
   <title></title>
   <style>
+  .container {
+    width: 160px;
+    height: 160px;
+  }
+
+  .container div {
+    float: left;
+    width: 20px;
+    height: 20px;
+    outline: 1px solid black;
+  }
+
   svg {
     margin: 0 auto;
   }
@@ -22,24 +34,13 @@
     stroke: #ccc;
     stroke-width: 2px;
   }
-
-  .game {
-    width: 160px;
-    height: 160px;
-  }
-
-  .game div {
-    float: left;
-    width: 20px;
-    height: 20px;
-    outline: 1px solid black;
-  }
-</style>
+  </style>
 </head>
 <body>
-  <div class="game"></div>
-  <script src="http://d3js.org/d3.v3.min.js"></script>
-  <script src="graph.js"></script>
-  <script src="index.js"></script>
+  <div class="container"></div>
+  <!-- <script src="http://d3js.org/d3.v3.min.js"></script> -->
+  <!-- <script src="graphRedux.js"></script> -->
+  <script src="bundle.js"></script>
+  <!-- <script src="reduxTest.js"></script> -->
 </body>
 </html>

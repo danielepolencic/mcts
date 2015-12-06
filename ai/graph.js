@@ -1,6 +1,9 @@
-'use strict';
+const d3 = require('d3');
+const get = require('../game/state').get;
 
-const generateGraph = (state) => {
+module.exports = {generate, create, destroy, update};
+
+function generate (state) {
   return function getNode (rootId) {
     const root = state.tree[rootId];
     if (root.children.length === 0) return Object.assign({}, root, {id: rootId});
@@ -12,8 +15,6 @@ const generateGraph = (state) => {
 var margin = {top: 50, right: 120, bottom: 20, left: 120},
   width = 5000 - margin.right - margin.left,
   height = 5000 - margin.top - margin.bottom;
-
-var i = 0;
 
 var treeGraph = d3.layout.tree()
   .size([width, height]);
