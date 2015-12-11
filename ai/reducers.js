@@ -5,9 +5,6 @@ const cloneTree = require('./utils').cloneTree;
 const gameActions = require('../game/actions');
 const gameReducer = require('../game/reducers');
 
-const query = require('../game/state').query;
-const get = require('../game/state').get;
-
 module.exports = predictionReducer;
 
 function predictionReducer (gameReducer, UCT) {
@@ -48,8 +45,8 @@ function selectReducer (state, policy) {
 function expandReducer (state) {
   const tree = cloneTree(state.tree);
   const selected = tree[state.selected];
-  const entity = query(selected.state)(['active']).filter((entity) => {
-    return !get(selected.state)(entity, 'active');
+  const entity = selected.state.query(['active']).filter((entity) => {
+    return !selected.state.get(entity, 'active');
   })[0];
   const childStates = ['up', 'down', 'right', 'left'].map((direction) => {
     const message = gameActions.moveEntity(entity, direction);
@@ -57,10 +54,10 @@ function expandReducer (state) {
     return gameReducer(gameReducer(childState, gameActions.entityTurn(entity)), message);
   });
   const childNodes = childStates.filter((childState) => {
-    return get(childState)('ghost', 'x') !== get(selected.state)('ghost', 'x') ||
-      get(childState)('ghost', 'y') !== get(selected.state)('ghost', 'y') ||
-      get(childState)('hero', 'x') !== get(selected.state)('hero', 'x') ||
-      get(childState)('hero', 'y') !== get(selected.state)('hero', 'y');
+    return childState.get('ghost', 'x') !== selected.state.get('ghost', 'x') ||
+      childState.get('ghost', 'y') !== selected.state.get('ghost', 'y') ||
+      childState.get('hero', 'x') !== selected.state.get('hero', 'x') ||
+      childState.get('hero', 'y') !== selected.state.get('hero', 'y');
   })
   .map((child) => node(state.selected, child))
   .map((node) => tree.push(node) - 1);
@@ -84,15 +81,15 @@ function backpropagationReducer (state) {
   const getNode = (id) => state.tree[id];
 
   const selected = state.tree[state.selected];
-  const entities = query(selected.state)(['score']);
-  const entity = query(selected.state)(['active']).filter((entity) => {
-    return get(selected.state)(entity, 'active');
+  const entities = selected.state.query(['score']);
+  const entity = selected.state.query(['active']).filter((entity) => {
+    return selected.state.get(entity, 'active');
   })[0];
   updateScore(selected, selected.state);
 
   function updateScore (node, state) {
     entities.forEach((entity) => {
-      const score = get(state)(entity, 'score');
+      const score = state.get(entity, 'score');
       return node.score[entity] = (node.score[entity] | 0) + score;
     });
     node.count[entity] = (node.count[entity] | 0) + 1;

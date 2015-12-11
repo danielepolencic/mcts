@@ -4,12 +4,11 @@ const gameReducer = require('./game/reducers');
 const createStore = require('./game/store');
 const render = require('./game/render');
 
-const query = require('./game/state').query;
-const get = require('./game/state').get;
+const World = require('./game/state');
 
 const moveAi = require('./ai/prediction');
 
-const initialGameState = [
+const initialGameState = World([
   {entity: 'hero', name: 'position', x: 4, y: 6},
   {entity: 'hero', name: 'lastMove', move: 'up'},
   {entity: 'hero', name: 'score', score: 0},
@@ -26,7 +25,13 @@ const initialGameState = [
   {entity: 'ghost', name: 'render', avatar: 'G'},
   {entity: 'reward', name: 'position', x: 6, y: 6},
   {entity: 'reward', name: 'render', avatar: 'R'}
-];
+]);
+
+// TODO:
+// - player turn order
+// - collapsible graph
+// - don't move back, please
+// - incremental state
 
 const store = createStore(gameReducer, initialGameState);
 const container = document.querySelector('.container');
@@ -38,9 +43,9 @@ document.addEventListener('keydown', (e) => {
   if (e.keyCode > 40 || e.keyCode < 37) return;
   e.preventDefault();
 
-  const state = store.getState()
-  const players = query(state)(['active']);
-  const activePlayerIndex = players.findIndex((player) => get(state)(player, 'active'));
+  const world = store.getState()
+  const players = world.query(['active']);
+  const activePlayerIndex = players.findIndex((player) => world.get(player, 'active'));
   const currentPlayer = players.slice(activePlayerIndex - 1)[0];
 
   store.dispatch(actions.entityTurn(currentPlayer));
@@ -48,7 +53,7 @@ document.addEventListener('keydown', (e) => {
   store.dispatch(actions.updateWinners());
 
   setTimeout(() => {
-    const move = get(moveAi(store.getState()).state)('ghost', 'move');
+    const move = moveAi(store.getState()).state.get('ghost', 'move');
     console.log('move: ', move);
     store.dispatch(actions.entityTurn('ghost'));
     store.dispatch(actions.moveEntity('ghost', move));

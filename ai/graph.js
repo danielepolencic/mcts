@@ -1,5 +1,4 @@
 const d3 = require('d3');
-const get = require('../game/state').get;
 
 module.exports = {generate, create, destroy, update};
 
@@ -72,7 +71,7 @@ function update(source) {
     .attr('x', 0)
     .attr('y', 15)
     .attr('text-anchor', 'middle')
-    .text((node) => `${get(node.state)('hero', 'x')},${get(node.state)('hero', 'y')} - ${get(node.state)('ghost', 'x')},${get(node.state)('ghost', 'y')}`);
+    .text((node) => `${node.state.get('hero', 'x')},${node.state.get('hero', 'y')} - ${node.state.get('ghost', 'x')},${node.state.get('ghost', 'y')}`);
 
   // text.append('tspan')
   //   .attr('class', 'antagonist')

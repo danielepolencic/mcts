@@ -4,12 +4,13 @@ const predictionReducer = require('../ai/reducers');
 const gameReducer = require('../game/reducers');
 const node = require('../ai/utils').node;
 const actions = require('../ai/actions');
-const get = require('../game/state').get;
+
+const World = require('../game/state');
 
 test('select a node in the tree and expand it (hero)', (t) => {
   let currentStatus = void 0;
 
-  const initialGameState = [
+  const initialGameState = World([
     {entity: 'hero', name: 'position', x: 0, y: 4},
     {entity: 'hero', name: 'lastMove', move: 'up'},
     {entity: 'hero', name: 'count', count: 0},
@@ -28,7 +29,7 @@ test('select a node in the tree and expand it (hero)', (t) => {
     {entity: 'ghost', name: 'render', avatar: 'G'},
     {entity: 'reward', name: 'position', x: 6, y: 6},
     {entity: 'reward', name: 'render', avatar: 'R'}
-  ];
+  ]);
 
   const initialPredictionState = {
     selected: void 0,
@@ -48,12 +49,12 @@ test('select a node in the tree and expand it (hero)', (t) => {
   currentStatus = predictionStore.getState();
   t.equal(currentStatus.tree.length, 4);
   t.equal(currentStatus.tree[0].children.join(''), '123');
-  t.equal(get(currentStatus.tree[1].state)('hero', 'x'), 0);
-  t.equal(get(currentStatus.tree[1].state)('hero', 'y'), 3);
-  t.equal(get(currentStatus.tree[2].state)('hero', 'x'), 0);
-  t.equal(get(currentStatus.tree[2].state)('hero', 'y'), 5);
-  t.equal(get(currentStatus.tree[3].state)('hero', 'x'), 1);
-  t.equal(get(currentStatus.tree[3].state)('hero', 'y'), 4);
+  t.equal(currentStatus.tree[1].state.get('hero', 'x'), 0);
+  t.equal(currentStatus.tree[1].state.get('hero', 'y'), 3);
+  t.equal(currentStatus.tree[2].state.get('hero', 'x'), 0);
+  t.equal(currentStatus.tree[2].state.get('hero', 'y'), 5);
+  t.equal(currentStatus.tree[3].state.get('hero', 'x'), 1);
+  t.equal(currentStatus.tree[3].state.get('hero', 'y'), 4);
 
   predictionStore.dispatch(actions.selectState('hero'));
 
@@ -63,8 +64,8 @@ test('select a node in the tree and expand it (hero)', (t) => {
   predictionStore.dispatch(actions.simulate());
 
   currentStatus = predictionStore.getState();
-  t.equal(get(currentStatus.tree[1].state)('hero', 'score'), 0);
-  t.equal(get(currentStatus.tree[1].state)('ghost', 'score'), 0);
+  t.equal(currentStatus.tree[1].state.get('hero', 'score'), 0);
+  t.equal(currentStatus.tree[1].state.get('ghost', 'score'), 0);
 
   predictionStore.dispatch(actions.backpropagate());
 
@@ -80,7 +81,7 @@ test('select a node in the tree and expand it (hero)', (t) => {
 test('test simulation, backpropagation (hero)', (t) => {
   let currentStatus = void 0;
 
-  const initialGameState = [
+  const initialGameState = World([
     {entity: 'hero', name: 'position', x: 5, y: 6},
     {entity: 'hero', name: 'lastMove', move: 'up'},
     {entity: 'hero', name: 'count', count: 0},
@@ -99,7 +100,7 @@ test('test simulation, backpropagation (hero)', (t) => {
     {entity: 'ghost', name: 'render', avatar: 'G'},
     {entity: 'reward', name: 'position', x: 6, y: 6},
     {entity: 'reward', name: 'render', avatar: 'R'}
-  ];
+  ]);
 
   const initialPredictionState = {
     selected: void 0,
@@ -117,14 +118,14 @@ test('test simulation, backpropagation (hero)', (t) => {
   currentStatus = predictionStore.getState();
   t.equal(currentStatus.tree.length, 5);
   t.equal(currentStatus.tree[0].children.join(''), '1234');
-  t.equal(get(currentStatus.tree[1].state)('hero', 'x'), 5);
-  t.equal(get(currentStatus.tree[1].state)('hero', 'y'), 5);
-  t.equal(get(currentStatus.tree[2].state)('hero', 'x'), 5);
-  t.equal(get(currentStatus.tree[2].state)('hero', 'y'), 7);
-  t.equal(get(currentStatus.tree[3].state)('hero', 'x'), 6);
-  t.equal(get(currentStatus.tree[3].state)('hero', 'y'), 6);
-  t.equal(get(currentStatus.tree[4].state)('hero', 'x'), 4);
-  t.equal(get(currentStatus.tree[4].state)('hero', 'y'), 6);
+  t.equal(currentStatus.tree[1].state.get('hero', 'x'), 5);
+  t.equal(currentStatus.tree[1].state.get('hero', 'y'), 5);
+  t.equal(currentStatus.tree[2].state.get('hero', 'x'), 5);
+  t.equal(currentStatus.tree[2].state.get('hero', 'y'), 7);
+  t.equal(currentStatus.tree[3].state.get('hero', 'x'), 6);
+  t.equal(currentStatus.tree[3].state.get('hero', 'y'), 6);
+  t.equal(currentStatus.tree[4].state.get('hero', 'x'), 4);
+  t.equal(currentStatus.tree[4].state.get('hero', 'y'), 6);
 
   predictionStore.dispatch(actions.selectState('hero'));
 
@@ -134,8 +135,8 @@ test('test simulation, backpropagation (hero)', (t) => {
   predictionStore.dispatch(actions.simulate());
 
   currentStatus = predictionStore.getState();
-  t.equal(get(currentStatus.tree[3].state)('hero', 'score'), 1);
-  t.equal(get(currentStatus.tree[3].state)('ghost', 'score'), 0);
+  t.equal(currentStatus.tree[3].state.get('hero', 'score'), 1);
+  t.equal(currentStatus.tree[3].state.get('ghost', 'score'), 0);
 
   predictionStore.dispatch(actions.backpropagate());
 
@@ -151,7 +152,7 @@ test('test simulation, backpropagation (hero)', (t) => {
 test('test simulation, backpropagation (ghost)', (t) => {
   let currentStatus = void 0;
 
-  const initialGameState = [
+  const initialGameState = World([
     {entity: 'hero', name: 'position', x: 4, y: 6},
     {entity: 'hero', name: 'lastMove', move: 'up'},
     {entity: 'hero', name: 'count', count: 0},
@@ -170,7 +171,7 @@ test('test simulation, backpropagation (ghost)', (t) => {
     {entity: 'ghost', name: 'render', avatar: 'G'},
     {entity: 'reward', name: 'position', x: 6, y: 6},
     {entity: 'reward', name: 'render', avatar: 'R'}
-  ];
+  ]);
 
   const initialPredictionState = {
     selected: void 0,
@@ -195,14 +196,14 @@ test('test simulation, backpropagation (ghost)', (t) => {
   currentStatus = predictionStore.getState();
   t.equal(currentStatus.tree.length, 5);
   t.equal(currentStatus.tree[0].children.join(''), '1234');
-  t.equal(get(currentStatus.tree[1].state)('hero', 'x'), 4);
-  t.equal(get(currentStatus.tree[1].state)('hero', 'y'), 5);
-  t.equal(get(currentStatus.tree[2].state)('hero', 'x'), 4);
-  t.equal(get(currentStatus.tree[2].state)('hero', 'y'), 7);
-  t.equal(get(currentStatus.tree[3].state)('hero', 'x'), 5);
-  t.equal(get(currentStatus.tree[3].state)('hero', 'y'), 6);
-  t.equal(get(currentStatus.tree[4].state)('hero', 'x'), 3);
-  t.equal(get(currentStatus.tree[4].state)('hero', 'y'), 6);
+  t.equal(currentStatus.tree[1].state.get('hero', 'x'), 4);
+  t.equal(currentStatus.tree[1].state.get('hero', 'y'), 5);
+  t.equal(currentStatus.tree[2].state.get('hero', 'x'), 4);
+  t.equal(currentStatus.tree[2].state.get('hero', 'y'), 7);
+  t.equal(currentStatus.tree[3].state.get('hero', 'x'), 5);
+  t.equal(currentStatus.tree[3].state.get('hero', 'y'), 6);
+  t.equal(currentStatus.tree[4].state.get('hero', 'x'), 3);
+  t.equal(currentStatus.tree[4].state.get('hero', 'y'), 6);
 
   predictionStore.dispatch(actions.selectState('hero'));
 
@@ -212,8 +213,8 @@ test('test simulation, backpropagation (ghost)', (t) => {
   predictionStore.dispatch(actions.simulate());
 
   currentStatus = predictionStore.getState();
-  t.equal(get(currentStatus.tree[3].state)('hero', 'score'), 0);
-  t.equal(get(currentStatus.tree[3].state)('ghost', 'score'), 0);
+  t.equal(currentStatus.tree[3].state.get('hero', 'score'), 0);
+  t.equal(currentStatus.tree[3].state.get('ghost', 'score'), 0);
 
   predictionStore.dispatch(actions.backpropagate());
 
@@ -228,14 +229,14 @@ test('test simulation, backpropagation (ghost)', (t) => {
   currentStatus = predictionStore.getState();
   t.equal(currentStatus.tree.length, 9);
   t.equal(currentStatus.tree[3].children.join(''), '5678');
-  t.equal(get(currentStatus.tree[5].state)('ghost', 'x'), 5);
-  t.equal(get(currentStatus.tree[5].state)('ghost', 'y'), 4);
-  t.equal(get(currentStatus.tree[6].state)('ghost', 'x'), 5);
-  t.equal(get(currentStatus.tree[6].state)('ghost', 'y'), 6);
-  t.equal(get(currentStatus.tree[7].state)('ghost', 'x'), 6);
-  t.equal(get(currentStatus.tree[7].state)('ghost', 'y'), 5);
-  t.equal(get(currentStatus.tree[8].state)('ghost', 'x'), 4);
-  t.equal(get(currentStatus.tree[8].state)('ghost', 'y'), 5);
+  t.equal(currentStatus.tree[5].state.get('ghost', 'x'), 5);
+  t.equal(currentStatus.tree[5].state.get('ghost', 'y'), 4);
+  t.equal(currentStatus.tree[6].state.get('ghost', 'x'), 5);
+  t.equal(currentStatus.tree[6].state.get('ghost', 'y'), 6);
+  t.equal(currentStatus.tree[7].state.get('ghost', 'x'), 6);
+  t.equal(currentStatus.tree[7].state.get('ghost', 'y'), 5);
+  t.equal(currentStatus.tree[8].state.get('ghost', 'x'), 4);
+  t.equal(currentStatus.tree[8].state.get('ghost', 'y'), 5);
 
   predictionStore.dispatch(actions.selectState('ghost'));
 
@@ -245,8 +246,8 @@ test('test simulation, backpropagation (ghost)', (t) => {
   predictionStore.dispatch(actions.simulate());
 
   currentStatus = predictionStore.getState();
-  t.equal(get(currentStatus.tree[6].state)('hero', 'score'), 0);
-  t.equal(get(currentStatus.tree[6].state)('ghost', 'score'), 1);
+  t.equal(currentStatus.tree[6].state.get('hero', 'score'), 0);
+  t.equal(currentStatus.tree[6].state.get('ghost', 'score'), 1);
 
   predictionStore.dispatch(actions.backpropagate());
 

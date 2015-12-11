@@ -1,9 +1,5 @@
 const actions = require('./actions');
 
-const query = require('./state').query;
-const get = require('./state').get;
-const set = require('./state').set;
-
 module.exports = gameReducer;
 
 function gameReducer (state, action) {
@@ -30,19 +26,19 @@ function motionReducer (state, entity, direction) {
       case 'up':
       case 0:
       case 38:
-        return get(state)(entity, 'y') > 0;
+        return state.get(entity, 'y') > 0;
       case 'right':
       case 1:
       case 39:
-        return get(state)(entity, 'x') < board.maxColumn - 1;
+        return state.get(entity, 'x') < board.maxColumn - 1;
       case 'down':
       case 2:
       case 40:
-        return get(state)(entity, 'y') < board.maxRow - 1;
+        return state.get(entity, 'y') < board.maxRow - 1;
       case 'left':
       case 3:
       case 37:
-        return get(state)(entity, 'x') > 0;
+        return state.get(entity, 'x') > 0;
       default:
         return false;
     }
@@ -53,41 +49,45 @@ function motionReducer (state, entity, direction) {
       case 'up':
       case 0:
       case 38:
-        return set(set(state)(entity, 'y', (y) => y - 1))(entity, 'move', () => 'up');
+        return state.set(entity, 'y', (y) => y - 1)
+          .set(entity, 'move', () => 'up');
       case 'right':
       case 1:
       case 39:
-        return set(set(state)(entity, 'x', (x) => x + 1))(entity, 'move', () => 'right');
+        return state.set(entity, 'x', (x) => x + 1)
+          .set(entity, 'move', () => 'right');
       case 'down':
       case 2:
       case 40:
-        return set(set(state)(entity, 'y', (y) => y + 1))(entity, 'move', () => 'down');
+        return state.set(entity, 'y', (y) => y + 1)
+          .set(entity, 'move', () => 'down');
       case 'left':
       case 3:
       case 37:
-        return set(set(state)(entity, 'x', (x) => x - 1))(entity, 'move', () => 'left');
+        return state.set(entity, 'x', (x) => x - 1)
+          .set(entity, 'move', () => 'left');
     }
   }
 }
 
 function scoreReducer (state) {
-  return query(state)(['score']).reduce((state, entity) => {
-    const target = get(state)(entity, 'target');
-    const targetX = get(state)(target, 'x');
-    const targetY = get(state)(target, 'y');
-    const entityX = get(state)(entity, 'x');
-    const entityY = get(state)(entity, 'y');
+  return state.query(['score']).reduce((state, entity) => {
+    const target = state.get(entity, 'target');
+    const targetX = state.get(target, 'x');
+    const targetY = state.get(target, 'y');
+    const entityX = state.get(entity, 'x');
+    const entityY = state.get(entity, 'y');
 
     return (targetX === entityX && targetY === entityY) ?
-      set(state)(entity, 'score', () => 1) : state;
+      state.set(entity, 'score', () => 1) : state;
   }, state);
 }
 
 function turnReducer (state, activeEntity) {
-  const entities = query(state)(['active']);
+  const entities = state.query(['active']);
 
   return entities.reduce((state, entity) => {
-    return set(state)(entity, 'active', () => entity === activeEntity);
+    return state.set(entity, 'active', () => entity === activeEntity);
   }, state);
 }
 
