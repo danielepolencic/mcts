@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "watchify index.js -t strictify --debug -o bundle.js",
+    "dev": "watchify index.js -t [ babelify --presets [ es2015 ] ] --debug -o bundle.js",
     "test": "browserify test/mcts.js -t [ babelify --presets [ es2015 ] ] --debug | node"
   },
   "author": "",

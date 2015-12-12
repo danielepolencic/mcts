@@ -1,8 +1,8 @@
 const test = require('tape');
-const World = require('../game/state');
+const GameState = require('../game/state');
 
-function createWorld () {
-  return World([
+function createGameState () {
+  return GameState([
     {entity: 'hero', name: 'position', x: 4, y: 6},
     {entity: 'ghost', name: 'score', score: 0},
     {entity: 'reward', name: 'position', x: 6, y: 6},
@@ -11,14 +11,14 @@ function createWorld () {
 }
 
 test('it should get a property', (t) => {
-  const world = createWorld();
+  const gameState = createGameState();
 
-  t.equal(world.get('hero', 'x'), 4);
+  t.equal(gameState.get('hero', 'x'), 4);
   t.end();
 });
 
 test('it should set a property', (t) => {
-  const v0 = createWorld();
+  const v0 = createGameState();
 
   const v1 = v0.set('hero', 'x', () => 5);
 
@@ -32,9 +32,9 @@ test('it should set a property', (t) => {
 });
 
 test('it should query for entities', (t) => {
-  const world = createWorld();
+  const gameState = createGameState();
 
-  const entities = world.query(['position']);
+  const entities = gameState.query(['position']);
 
   t.deepEqual(entities, ['hero', 'reward']);
   t.end();

@@ -1,6 +1,4 @@
 const actions = require('./actions');
-const node = require('./utils').node;
-const cloneTree = require('./utils').cloneTree;
 
 const gameActions = require('../game/actions');
 const gameReducer = require('../game/reducers');
@@ -8,95 +6,86 @@ const gameReducer = require('../game/reducers');
 module.exports = predictionReducer;
 
 function predictionReducer (gameReducer, UCT) {
-  return (state, action) => {
+  return (simulationState, action) => {
     switch (action.type) {
       case actions.SELECT_NODE:
-        return selectReducer(state, UCT(action.entity));
+        return selectReducer(simulationState, UCT(action.entity));
       case actions.EXPAND_STATE:
-        return expandReducer(state);
+        return expandReducer(simulationState);
       case actions.SIMULATE:
-        return simulationReducer(state);
+        return simulationReducer(simulationState);
       case actions.BACKPROPAGATE:
-        return backpropagationReducer(state);
+        return backpropagationReducer(simulationState);
       default:
-        return state;
+        return simulationState;
     }
   };
 }
 
-function selectReducer (state, policy) {
-  const getNode = (id) => state.tree[id];
+function selectReducer (simulationState, policy) {
+  return (function selectChild (simulationState) {
+    const children = simulationState.getCurrentNode().children;
+    if (children.length === 0) return simulationState;
 
-  const selected = (function selectChild (root) {
-    const children = root.children;
-    if (children.length === 0) return root;
+    const nodeId = policy(simulationState);
 
-    const child = policy(root, children.map(getNode));
-
-    return selectChild(child);
-  })(state.tree[0]);
-
-  return {
-    selected: state.tree.findIndex((node) => node === selected),
-    tree: cloneTree(state.tree)
-  };
+    return selectChild(simulationState.setCurrentNode(nodeId));
+  })(simulationState.setCurrentNode(0));
 }
 
-function expandReducer (state) {
-  const tree = cloneTree(state.tree);
-  const selected = tree[state.selected];
-  const entity = selected.state.query(['active']).filter((entity) => {
-    return !selected.state.get(entity, 'active');
-  })[0];
-  const childStates = ['up', 'down', 'right', 'left'].map((direction) => {
-    const message = gameActions.moveEntity(entity, direction);
-    const childState = state.tree[state.selected].state;
-    return gameReducer(gameReducer(childState, gameActions.entityTurn(entity)), message);
+function expandReducer (simulationState) {
+  const gameState = simulationState.getCurrentNode().gameState;
+  const entity = gameState.query(['active']).find((entity) => {
+    return !gameState.get(entity, 'active');
   });
-  const childNodes = childStates.filter((childState) => {
-    return childState.get('ghost', 'x') !== selected.state.get('ghost', 'x') ||
-      childState.get('ghost', 'y') !== selected.state.get('ghost', 'y') ||
-      childState.get('hero', 'x') !== selected.state.get('hero', 'x') ||
-      childState.get('hero', 'y') !== selected.state.get('hero', 'y');
-  })
-  .map((child) => node(state.selected, child))
-  .map((node) => tree.push(node) - 1);
 
-  tree[state.selected].children = childNodes;
-
-  return {selected: state.selected, tree};
+  return ['up', 'down', 'right', 'left']
+    .map((direction) => {
+      const newGameState = gameReducer(gameState, gameActions.entityTurn(entity));
+      const message = gameActions.moveEntity(entity, direction);
+      return gameReducer(newGameState, message);
+    })
+    .filter((newGameState) => {
+      return newGameState.get('ghost', 'x') !== gameState.get('ghost', 'x') ||
+        newGameState.get('ghost', 'y') !== gameState.get('ghost', 'y') ||
+        newGameState.get('hero', 'x') !== gameState.get('hero', 'x') ||
+        newGameState.get('hero', 'y') !== gameState.get('hero', 'y');
+    })
+    .reduce((simulationState, gameState) => {
+      return simulationState.setChildNode(gameState);
+    }, simulationState);
 };
 
-function simulationReducer (state) {
-  const childState = state.tree[state.selected].state;
-  const child = gameReducer(childState, gameActions.updateWinners());
-  const tree = cloneTree(state.tree);
-  tree[state.selected].state = child;
-
-  return {selected: state.selected, tree};
+function simulationReducer (simulationState) {
+  const gameState = simulationState.getCurrentNode().gameState;
+  const newGameState = gameReducer(gameState, gameActions.updateWinners());
+  return simulationState.updateCurrentNode(newGameState);
 }
 
-function backpropagationReducer (state) {
-  const tree = cloneTree(state.tree);
-  const getNode = (id) => state.tree[id];
+function backpropagationReducer (simulationState) {
+  const gameState = simulationState.getCurrentNode().gameState;
+  const currentNode = simulationState.getCurrentNode().id;
+  const entities = gameState.query(['score']);
+  const entity = gameState.query(['active']).find((entity) => {
+    return gameState.get(entity, 'active');
+  });
 
-  const selected = state.tree[state.selected];
-  const entities = selected.state.query(['score']);
-  const entity = selected.state.query(['active']).filter((entity) => {
-    return selected.state.get(entity, 'active');
-  })[0];
-  updateScore(selected, selected.state);
+  // long story short: you need to compute score just once and not for every
+  // iteration.
+  // if you compute the score for every iteration, that game state might not
+  // have the same score
+  const score = gameState.get(entity, 'score');
+  return (function updateScore (simulationState) {
+    const gameState = simulationState.getCurrentNode().gameState;
+    const backpropagatedState = entities
+    .reduce((simulationState, entity) => {
+      return simulationState.setScore(entity, (s) => (s | 0) + score);
+    }, simulationState)
+    .setCount(entity, (count) => (count | 0) + 1);
 
-  function updateScore (node, state) {
-    entities.forEach((entity) => {
-      const score = state.get(entity, 'score');
-      return node.score[entity] = (node.score[entity] | 0) + score;
-    });
-    node.count[entity] = (node.count[entity] | 0) + 1;
-    const parentNode = getNode(node.parentId);
-    if (parentNode) updateScore(parentNode, state);
-  }
-
-  return {selected: state.selected, tree};
+    const parentId = backpropagatedState.getCurrentNode().parentId;
+    return parentId === undefined ? backpropagatedState
+      : updateScore(backpropagatedState.setCurrentNode(parentId));
+  })(simulationState).setCurrentNode(currentNode);
 };
 

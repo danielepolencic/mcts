@@ -1,8 +1,9 @@
 module.exports = UCT;
 
 function UCT (entity) {
-  return (parent, children) => {
-    const parentCount = parent.count[entity] || 1;
+  return (simulationState) => {
+    const parentCount = simulationState.getCount(entity) || 1;
+    const children = simulationState.getChildNodes();
 
     const scores = children.map((node) => {
       const score = node.score[entity] | 0;
@@ -21,6 +22,6 @@ function UCT (entity) {
     const random = Math.random();
     const index = cumulativeScores.findIndex((score) => score >= random);
 
-    return children[index];
+    return children[index].id;
   };
 }

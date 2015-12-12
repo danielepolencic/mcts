@@ -1,6 +1,6 @@
-module.exports = World;
+module.exports = GameState;
 
-function World (state) {
+function GameState (state) {
   return {get, set, query, dump};
 
   function set (entity, key, fn) {
@@ -13,7 +13,7 @@ function World (state) {
 
     const component = Object.assign({}, state[componentIndex]);
     component[key] = fn(component[key]);
-    return World(pre.concat(component).concat(post));
+    return GameState(pre.concat(component).concat(post));
   }
 
   function get (entity, key) {

@@ -4,11 +4,11 @@ const gameReducer = require('./game/reducers');
 const createStore = require('./game/store');
 const render = require('./game/render');
 
-const World = require('./game/state');
+const GameState = require('./game/state');
 
 const moveAi = require('./ai/prediction');
 
-const initialGameState = World([
+const initialGameState = GameState([
   {entity: 'hero', name: 'position', x: 4, y: 6},
   {entity: 'hero', name: 'lastMove', move: 'up'},
   {entity: 'hero', name: 'score', score: 0},
@@ -28,6 +28,11 @@ const initialGameState = World([
 ]);
 
 // TODO:
+// 
+// finish updategraph (new state)
+// make the state flat. no getCHild -> just get and set on properties you know.
+// simple
+//
 // - player turn order
 // - collapsible graph
 // - don't move back, please
@@ -43,9 +48,9 @@ document.addEventListener('keydown', (e) => {
   if (e.keyCode > 40 || e.keyCode < 37) return;
   e.preventDefault();
 
-  const world = store.getState()
-  const players = world.query(['active']);
-  const activePlayerIndex = players.findIndex((player) => world.get(player, 'active'));
+  const gameState = store.getState();
+  const players = gameState.query(['active']);
+  const activePlayerIndex = players.findIndex((player) => gameState.get(player, 'active'));
   const currentPlayer = players.slice(activePlayerIndex - 1)[0];
 
   store.dispatch(actions.entityTurn(currentPlayer));
@@ -53,7 +58,7 @@ document.addEventListener('keydown', (e) => {
   store.dispatch(actions.updateWinners());
 
   setTimeout(() => {
-    const move = moveAi(store.getState()).state.get('ghost', 'move');
+    const move = moveAi(store.getState()).getCurrentNode().gameState.get('ghost', 'move');
     console.log('move: ', move);
     store.dispatch(actions.entityTurn('ghost'));
     store.dispatch(actions.moveEntity('ghost', move));

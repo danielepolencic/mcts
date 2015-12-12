@@ -1,7 +1,7 @@
 module.exports = isGameOver;
 
-function isGameOver (state) {
-  const gameState = state.tree[state.selected].state;
+function isGameOver (simulationState) {
+  const gameState = simulationState.getCurrentNode().gameState;
 
   return gameState.query(['score']).some((entity) => {
     return gameState.get(entity, 'score') === 1;

@@ -1,4 +1,3 @@
-const node = require('./utils.js').node;
 const actions = require('./actions');
 const predictionReducer = require('./reducers');
 const UCT = require('./uct');
@@ -7,6 +6,7 @@ const createStore = require('../game/store');
 const gameReducer = require('../game/reducers');
 
 const graph = require('./graph');
+const SimulationState = require('./state');
 
 module.exports = moveAi;
 
@@ -22,31 +22,32 @@ function predictBestMove (predictionStore) {
     predictionStore.dispatch(actions.expandState());
 }
 
-function moveAi (state) {
-  const initialPredictionState = {
-    selected: void 0,
-    tree: [node(void 0, state)]
-  };
-  const predictionStore = createStore(predictionReducer(gameReducer, UCT), initialPredictionState);
+function moveAi (gameState) {
+  const initialPredictionState = SimulationState(gameState);
+  const reducer = predictionReducer(gameReducer, UCT);
+  const predictionStore = createStore(reducer, initialPredictionState);
 
   graph.destroy();
   graph.create();
 
-  for (let i = 0; i < 1000; i++) predictBestMove(predictionStore);
+  for (let i = 0; i < 3; i++) predictBestMove(predictionStore);
 
-  graph.update(graph.generate(predictionStore.getState())(0));
+  graph.update(graph.generate(predictionStore.getState()));
 
   return findBestMove(predictionStore.getState());
 }
 
-function findBestMove (state) {
-  const getNode = (id) => state.tree[id];
-  const children = state.tree[0].children;
-  if (children.length === 0) return state.tree[0];
+function findBestMove (simulationState) {
+  const rootNode = simulationState.setCurrentNode(0);
+  const children = rootNode.getChildNodes();
+  if (children.length === 0) return rootNode;
 
-  const scores = children.map(getNode)
-    .map((child) => child.score.ghost / child.count.ghost);
+  const scores = children
+    .map((node) => {
+      if (node.count.ghost | 0 === 0) return 0;
+      return (node.score.ghost | 0) / (node.count.ghost | 0);
+    });
   const bestScore = Math.max.apply(null, scores);
   const index = scores.findIndex((score) => score === bestScore);
-  return getNode(children[index]);
+  return simulationState.setCurrentNode(children[index].id);
 }
