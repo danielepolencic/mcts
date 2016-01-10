@@ -1,38 +1,35 @@
-module.exports = GameState;
+const Immutable = require('immutable');
 
-function GameState (state) {
+module.exports = (gameState) => {
+  return GameState(Immutable.fromJS(gameState));
+};
+
+function GameState (gameState) {
   return {get, set, query, dump};
 
   function set (entity, key, fn) {
-    const componentIndex = state.findIndex((component) => {
-      return component.entity === entity && key in component;
+    const componentIndex = gameState.findIndex((component) => {
+      return component.get('entity') === entity && component.has(key);
     });
 
-    const pre = state.slice(0, componentIndex);
-    const post = state.slice(componentIndex + 1);
-
-    const component = Object.assign({}, state[componentIndex]);
-    component[key] = fn(component[key]);
-    return GameState(pre.concat(component).concat(post));
+    return GameState(gameState.updateIn([componentIndex, key], fn));
   }
 
   function get (entity, key) {
-    const component = state.find((component) => {
-      return component.entity === entity && key in component;
+    const component = gameState.find((component) => {
+      return component.get('entity') === entity && component.has(key);
     });
-    return component[key];
+    return component.get(key);
   }
 
   function query (componentNames) {
-    return state.filter((component) => componentNames.indexOf(component.name) > -1)
-      .map((component) => component.entity)
-      .reduce((uniques, component) => {
-        return uniques.indexOf(component) > -1 ? uniques : uniques.concat(component);
-      }, []);
+    return gameState.filter((component) => componentNames.indexOf(component.get('name')) > -1)
+      .map((component) => component.get('entity'))
+      .toSet().toJS();
   }
 
   function dump () {
-    return state;
+    return gameState.toJS();
   }
 
 }
