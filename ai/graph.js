@@ -5,8 +5,8 @@ module.exports = {generate, create, destroy, update};
 function generate (simulationState) {
   return (function getNode (simulationState) {
     const childNodes = simulationState.getChildNodes();
-    if (childNodes.length === 0) return simulationState.dump();
-    return Object.assign({}, simulationState.dump(), {
+    if (childNodes.length === 0) return simulationState.getCurrentNode();
+    return Object.assign({}, simulationState.getCurrentNode(), {
       children: childNodes.map((child) => simulationState.setCurrentNode(child.id)).map(getNode)
     });
   })(simulationState.setCurrentNode(0));
@@ -66,14 +66,14 @@ function update(source) {
     .attr('x', 0)
     .attr('y', 0)
     .attr('text-anchor', 'middle')
-    // .text((node) => `${node.score.hero | 0}/${node.count.hero | 0} - ${node.score.ghost | 0}/${node.count.ghost | 0}`);
+    .text((node) => `${node.score.hero | 0}/${node.count.hero | 0} - ${node.score.ghost | 0}/${node.count.ghost | 0}`);
 
   text.append('tspan')
     .attr('class', 'position')
     .attr('x', 0)
     .attr('y', 15)
     .attr('text-anchor', 'middle')
-    // .text((node) => `${node.gameState.get('hero', 'x')},${node.gameState.get('hero', 'y')} - ${node.gameState.get('ghost', 'x')},${node.gameState.get('ghost', 'y')}`);
+    .text((node) => `${node.gameState.get('hero', 'x')},${node.gameState.get('hero', 'y')} - ${node.gameState.get('ghost', 'x')},${node.gameState.get('ghost', 'y')}`);
 
   // text.append('tspan')
   //   .attr('class', 'antagonist')
