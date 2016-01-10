@@ -2,14 +2,17 @@ module.exports = UCT;
 
 function UCT (entity) {
   return (simulationState) => {
-    const parentCount = simulationState.getCount(entity) || 1;
-    const children = simulationState.getChildNodes();
+    const {currentNodeId} = simulationState;
+    const {gameState, count, children} = simulationState.nodes.get(currentNodeId);
 
-    const scores = children.map((node) => {
-      const score = node.score[entity] | 0;
-      const count = node.count[entity] || 1;
+    const parentCount = count.get(entity) || 1;
 
-      return ((score + 1) / count) + Math.sqrt(2 * Math.log(parentCount / count));
+    const scores = children.map((nodeId) => {
+      const {score, count} = simulationState.nodes.get(nodeId);
+      const entityScore = score.get(entity) | 0;
+      const entityCount = count.get(entity) || 1;
+
+      return ((entityScore + 1) / entityCount) + Math.sqrt(2 * Math.log(parentCount / entityCount));
     });
 
     const totalScore = scores.reduce((total, score) => {return total + score}, 0);
@@ -22,6 +25,6 @@ function UCT (entity) {
     const random = Math.random();
     const index = cumulativeScores.findIndex((score) => score >= random);
 
-    return children[index].id;
+    return children.get(index);
   };
 }

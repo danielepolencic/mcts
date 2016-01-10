@@ -3,13 +3,16 @@ const d3 = require('d3');
 module.exports = {generate, create, destroy, update};
 
 function generate (simulationState) {
-  return (function getNode (simulationState) {
-    const childNodes = simulationState.getChildNodes();
-    if (childNodes.length === 0) return simulationState.getCurrentNode();
-    return Object.assign({}, simulationState.getCurrentNode(), {
-      children: childNodes.map((child) => simulationState.setCurrentNode(child.id)).map(getNode)
+  return (function getNode (currentNodeId) {
+    const currentNode = simulationState.nodes.get(currentNodeId);
+    const {children} = currentNode;
+    if (children.size === 0) return Object.assign({}, currentNode.toJS(), {id: currentNodeId});
+
+    return Object.assign({}, currentNode.toJS(), {
+      children: children.map(getNode).toJS(),
+      id: currentNodeId
     });
-  })(simulationState.setCurrentNode(0));
+  })(0);
 }
 
 // ************** Generate the tree diagram  *****************

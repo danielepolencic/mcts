@@ -58,7 +58,7 @@ document.addEventListener('keydown', (e) => {
   store.dispatch(actions.updateWinners());
 
   setTimeout(() => {
-    const move = moveAi(store.getState()).getCurrentNode().gameState.get('ghost', 'move');
+    const move = moveAi(store.getState()).get('ghost', 'move');
     console.log('move: ', move);
     store.dispatch(actions.entityTurn('ghost'));
     store.dispatch(actions.moveEntity('ghost', move));

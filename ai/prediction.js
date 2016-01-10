@@ -6,7 +6,7 @@ const createStore = require('../game/store');
 const gameReducer = require('../game/reducers');
 
 const graph = require('./graph');
-const SimulationState = require('./state');
+const {SimulationState} = require('./state');
 
 module.exports = moveAi;
 
@@ -30,7 +30,7 @@ function moveAi (gameState) {
   graph.destroy();
   graph.create();
 
-  for (let i = 0; i < 3; i++) predictBestMove(predictionStore);
+  for (let i = 0; i < 50; i++) predictBestMove(predictionStore);
 
   graph.update(graph.generate(predictionStore.getState()));
 
@@ -38,16 +38,16 @@ function moveAi (gameState) {
 }
 
 function findBestMove (simulationState) {
-  const rootNode = simulationState.setCurrentNode(0);
-  const children = rootNode.getChildNodes();
-  if (children.length === 0) return rootNode;
+  const {children, gameState} = simulationState.nodes.get(0);
+  if (children.size === 0) return gameState;
 
   const scores = children
-    .map((node) => {
-      if (node.count.ghost | 0 === 0) return 0;
-      return (node.score.ghost | 0) / (node.count.ghost | 0);
+    .map((nodeId) => {
+      const {count, score} = simulationState.nodes.get(nodeId);
+      if ((count.get('ghost') | 0) === 0) return 0;
+      return (score.get('ghost') | 0) / (count.get('ghost') | 0);
     });
-  const bestScore = Math.max.apply(null, scores);
+  const bestScore = Math.max.apply(null, scores.toJS());
   const index = scores.findIndex((score) => score === bestScore);
-  return simulationState.setCurrentNode(children[index].id);
+  return simulationState.nodes.get(children.get(index)).gameState;
 }
