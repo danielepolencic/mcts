@@ -17,8 +17,8 @@ function generate (simulationState) {
 
 // ************** Generate the tree diagram  *****************
 var margin = {top: 50, right: 120, bottom: 20, left: 120},
-  width = 1000 - margin.right - margin.left,
-  height = 1000 - margin.top - margin.bottom;
+  width = 5000 - margin.right - margin.left,
+  height = 5000 - margin.top - margin.bottom;
 
 var treeGraph = d3.layout.tree()
   .size([width, height]);

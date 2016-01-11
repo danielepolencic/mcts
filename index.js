@@ -28,10 +28,6 @@ const initialGameState = GameState([
 ]);
 
 // TODO:
-// 
-// finish updategraph (new state)
-// make the state flat. no getCHild -> just get and set on properties you know.
-// simple
 //
 // - player turn order
 // - collapsible graph

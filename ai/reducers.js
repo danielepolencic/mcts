@@ -83,18 +83,14 @@ function backpropagationReducer (simulationState) {
     return gameState.get(entity, 'active');
   });
 
-  // long story short: you need to compute score just once and not for every
-  // iteration.
-  // if you compute the score for every iteration, that game state might not
-  // have the same score
-  const score = gameState.get(entity, 'score');
+  // player can lose the game...
+  const scores = entities.map((entity) => gameState.get(entity, 'score'));
   return (function updateScore (simulationState, currentNodeId) {
     const {gameState, parentId} = simulationState.nodes.get(currentNodeId);
-    const backpropagatedState = entities
-    .reduce((simulationState, entity) => {
-      return simulationState.updateIn(['nodes', currentNodeId, 'score', entity], (s) => (s | 0) + score);
-    }, simulationState)
-    .updateIn(['nodes', currentNodeId, 'count', entity], (count) => (count | 0) + 1);
+    const backpropagatedState = entities.reduce((simulationState, entity, index) => {
+        return simulationState.updateIn(['nodes', currentNodeId, 'score', entity], (s) => (s | 0) + scores[index]);
+      }, simulationState)
+      .updateIn(['nodes', currentNodeId, 'count', entity], (count) => (count | 0) + 1);
 
     return parentId === undefined ? backpropagatedState
       : updateScore(backpropagatedState, parentId);
