@@ -32,7 +32,6 @@ const initialGameState = GameState([
 // - player turn order
 // - collapsible graph
 // - don't move back, please
-// - incremental state
 
 const store = createStore(gameReducer, initialGameState);
 const container = document.querySelector('.container');
@@ -45,9 +44,9 @@ document.addEventListener('keydown', (e) => {
   e.preventDefault();
 
   const gameState = store.getState();
-  const players = gameState.query(['active']);
-  const activePlayerIndex = players.findIndex((player) => gameState.get(player, 'active'));
-  const currentPlayer = players.slice(activePlayerIndex - 1)[0];
+  const currentPlayer = gameState.query(['active']).filter((entityName) => {
+    return !gameState.get(entityName, 'active');
+  })[0];
 
   store.dispatch(actions.entityTurn(currentPlayer));
   store.dispatch(actions.moveEntity(currentPlayer, e.keyCode));

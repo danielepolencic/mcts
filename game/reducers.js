@@ -2,92 +2,92 @@ const actions = require('./actions');
 
 module.exports = gameReducer;
 
-function gameReducer (state, action) {
+function gameReducer (gameState, action) {
   switch (action.type) {
     case actions.MOVE_ENTITY:
-      return motionReducer(state, action.entity, action.direction);
+      return motionReducer(gameState, action.entity, action.direction);
     case actions.UPDATE_WINNER:
-      return scoreReducer(state);
+      return scoreReducer(gameState);
     case actions.ENTITY_TURN:
-      return turnReducer(state, action.entity);
+      return turnReducer(gameState, action.entity);
     default:
-      return state;
+      return gameState;
   }
 }
 
-function motionReducer (state, entity, direction) {
+function motionReducer (gameState, entityName, direction) {
   const board = {maxRow: 8, maxColumn: 8};
 
-  return (canMove(state, entity, direction)) ?
-    move(state, entity, direction) : state;
+  return canMove(gameState, entityName, direction) ?
+    move(gameState, entityName, direction) : gameState;
 
-  function canMove (state, entity, direction) {
+  function canMove (gameState, entityName, direction) {
     switch (direction) {
       case 'up':
       case 0:
       case 38:
-        return state.get(entity, 'y') > 0;
+        return gameState.get(entityName, 'y') > 0;
       case 'right':
       case 1:
       case 39:
-        return state.get(entity, 'x') < board.maxColumn - 1;
+        return gameState.get(entityName, 'x') < board.maxColumn - 1;
       case 'down':
       case 2:
       case 40:
-        return state.get(entity, 'y') < board.maxRow - 1;
+        return gameState.get(entityName, 'y') < board.maxRow - 1;
       case 'left':
       case 3:
       case 37:
-        return state.get(entity, 'x') > 0;
+        return gameState.get(entityName, 'x') > 0;
       default:
         return false;
     }
   }
 
-  function move (state, entity, direction) {
+  function move (gameState, entityName, direction) {
     switch (direction) {
       case 'up':
       case 0:
       case 38:
-        return state.set(entity, 'y', (y) => y - 1)
-          .set(entity, 'move', () => 'up');
+        return gameState.set(entityName, 'y', (y) => y - 1)
+          .set(entityName, 'move', () => 'up');
       case 'right':
       case 1:
       case 39:
-        return state.set(entity, 'x', (x) => x + 1)
-          .set(entity, 'move', () => 'right');
+        return gameState.set(entityName, 'x', (x) => x + 1)
+          .set(entityName, 'move', () => 'right');
       case 'down':
       case 2:
       case 40:
-        return state.set(entity, 'y', (y) => y + 1)
-          .set(entity, 'move', () => 'down');
+        return gameState.set(entityName, 'y', (y) => y + 1)
+          .set(entityName, 'move', () => 'down');
       case 'left':
       case 3:
       case 37:
-        return state.set(entity, 'x', (x) => x - 1)
-          .set(entity, 'move', () => 'left');
+        return gameState.set(entityName, 'x', (x) => x - 1)
+          .set(entityName, 'move', () => 'left');
     }
   }
 }
 
-function scoreReducer (state) {
-  return state.query(['score']).reduce((state, entity) => {
-    const target = state.get(entity, 'target');
-    const targetX = state.get(target, 'x');
-    const targetY = state.get(target, 'y');
-    const entityX = state.get(entity, 'x');
-    const entityY = state.get(entity, 'y');
+function scoreReducer (gameState) {
+  return gameState.query(['score']).reduce((gameState, entityName) => {
+    const target = gameState.get(entityName, 'target');
+    const targetX = gameState.get(target, 'x');
+    const targetY = gameState.get(target, 'y');
+    const entityX = gameState.get(entityName, 'x');
+    const entityY = gameState.get(entityName, 'y');
 
     return (targetX === entityX && targetY === entityY) ?
-      state.set(entity, 'score', () => 1) : state;
-  }, state);
+      gameState.set(entityName, 'score', () => 1) : gameState;
+  }, gameState);
 }
 
-function turnReducer (state, activeEntity) {
-  const entities = state.query(['active']);
+function turnReducer (gameState, activeEntityName) {
+  const entities = gameState.query(['active']);
 
-  return entities.reduce((state, entity) => {
-    return state.set(entity, 'active', () => entity === activeEntity);
-  }, state);
+  return entities.reduce((gameState, entityName) => {
+    return gameState.set(entityName, 'active', () => entityName === activeEntityName);
+  }, gameState);
 }
 

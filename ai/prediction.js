@@ -38,16 +38,16 @@ function moveAi (gameState) {
 }
 
 function findBestMove (simulationState) {
-  const {children, gameState} = simulationState.nodes.get(0);
+  const {children, gameState} = simulationState.getIn(['nodes', 0]);
   if (children.size === 0) return gameState;
 
   const scores = children
     .map((nodeId) => {
-      const {count, score} = simulationState.nodes.get(nodeId);
+      const {count, score} = simulationState.getIn(['nodes', nodeId]);
       if ((count.get('ghost') | 0) === 0) return 0;
       return (score.get('ghost') | 0) / (count.get('ghost') | 0);
     });
-  const bestScore = Math.max.apply(null, scores.toJS());
+  const bestScore = scores.max();
   const index = scores.findIndex((score) => score === bestScore);
-  return simulationState.nodes.get(children.get(index)).gameState;
+  return simulationState.getIn(['nodes', children.get(index), 'gameState']);
 }
