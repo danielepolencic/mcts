@@ -60,10 +60,12 @@ function expandReducer (simulationState) {
 
   return simulationState.withMutations((simulationState) => {
     const initialSize = simulationState.nodes.size;
-    simulationState.update('nodes', (nodes) => nodes.concat(expandedGameStates));
-    simulationState.updateIn(['nodes', currentNodeId, 'children'], (children) => {
-      return children.concat(Range(initialSize, simulationState.nodes.size));
-    });
+    simulationState.update('nodes', (nodes) => nodes.withMutations((nodes) => {
+      expandedGameStates.forEach((gameState) => nodes.push(gameState));
+    }));
+
+    const childrenIds = Range(initialSize, simulationState.nodes.size);
+    simulationState.setIn(['nodes', currentNodeId, 'children'], childrenIds);
   });
 };
 
