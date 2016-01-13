@@ -26,15 +26,17 @@ function predictionReducer (gameReducer, UCT) {
 }
 
 function selectReducer (simulationState, policy) {
-  return (function selectChild (simulationState) {
-    const {currentNodeId} = simulationState;
-    const {children} = simulationState.nodes.get(currentNodeId);
-    if (children.size === 0) return simulationState;
+  const simulationNodes = simulationState.nodes;
+  const selectedNodeId = (function selectChild (currentNodeId) {
+    const {children} = simulationNodes.get(currentNodeId);
+    if (children.size === 0) return currentNodeId;
 
-    const selectedNodeId = policy(simulationState);
+    const selectedNodeId = policy(simulationNodes, currentNodeId);
 
-    return selectChild(simulationState.set('currentNodeId', selectedNodeId));
-  })(simulationState.set('currentNodeId', 0));
+    return selectChild(selectedNodeId);
+  })(0);
+
+  return simulationState.set('currentNodeId', selectedNodeId);
 }
 
 function expandReducer (simulationState) {
@@ -90,7 +92,7 @@ function backpropagationReducer (simulationState) {
   return (function updateScore (simulationState, currentNodeId) {
     const {gameState, parentId} = simulationState.nodes.get(currentNodeId);
     const backpropagatedState = entities.reduce((simulationState, entity, index) => {
-        return simulationState.updateIn(['nodes', currentNodeId, 'score', entity], (s) => (s | 0) + scores[index]);
+        return simulationState.updateIn(['nodes', currentNodeId, 'score', entity], (s) => (s | 0) + scores.get(index));
       }, simulationState)
       .updateIn(['nodes', currentNodeId, 'count', entity], (count) => (count | 0) + 1);
 

@@ -25,7 +25,7 @@ function GameState (gameState) {
   function query (componentNames) {
     return gameState.filter((component) => componentNames.indexOf(component.get('name')) > -1)
       .map((component) => component.get('entity'))
-      .toSet().toJS();
+      .toSet().toList();
   }
 
   function dump () {

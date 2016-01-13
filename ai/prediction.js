@@ -30,7 +30,7 @@ function moveAi (gameState) {
   graph.destroy();
   graph.create();
 
-  for (let i = 0; i < 50; i++) predictBestMove(predictionStore);
+  for (let i = 0; i < 5000; i++) predictBestMove(predictionStore);
 
   graph.update(graph.generate(predictionStore.getState()));
 

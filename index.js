@@ -46,7 +46,7 @@ document.addEventListener('keydown', (e) => {
   const gameState = store.getState();
   const currentPlayer = gameState.query(['active']).filter((entityName) => {
     return !gameState.get(entityName, 'active');
-  })[0];
+  }).first();
 
   store.dispatch(actions.entityTurn(currentPlayer));
   store.dispatch(actions.moveEntity(currentPlayer, e.keyCode));

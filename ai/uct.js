@@ -1,14 +1,13 @@
 module.exports = UCT;
 
 function UCT (entity) {
-  return (simulationState) => {
-    const {currentNodeId} = simulationState;
-    const {gameState, count, children} = simulationState.nodes.get(currentNodeId);
+  return (simulationNodes, currentNodeId) => {
+    const {gameState, count, children} = simulationNodes.get(currentNodeId);
 
     const parentCount = count.get(entity) || 1;
 
     const scores = children.map((nodeId) => {
-      const {score, count} = simulationState.nodes.get(nodeId);
+      const {score, count} = simulationNodes.get(nodeId);
       const entityScore = score.get(entity) | 0;
       const entityCount = count.get(entity) || 1;
 
