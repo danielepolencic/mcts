@@ -30,7 +30,9 @@ const initialGameState = GameState([
 // TODO:
 //
 // - player turn order
-// - collapsible graph
+// - graph:
+//    - collapsible graph http://bl.ocks.org/mbostock/4339083
+//    - incremental updates
 // - don't move back, please
 
 const store = createStore(gameReducer, initialGameState);

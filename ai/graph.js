@@ -9,7 +9,8 @@ function generate (simulationState) {
     if (children.size === 0) return Object.assign({}, currentNode.toJS(), {id: currentNodeId});
 
     return Object.assign({}, currentNode.toJS(), {
-      children: children.map(getNode).toJS(),
+      _children: children.map(getNode).toJS(),
+      children: null,
       id: currentNodeId
     });
   })(0);
@@ -17,8 +18,8 @@ function generate (simulationState) {
 
 // ************** Generate the tree diagram  *****************
 var margin = {top: 50, right: 120, bottom: 20, left: 120},
-  width = 5000 - margin.right - margin.left,
-  height = 5000 - margin.top - margin.bottom;
+  width = 800 - margin.right - margin.left,
+  height = 600 - margin.top - margin.bottom;
 
 var treeGraph = d3.layout.tree()
   .size([width, height]);
@@ -26,10 +27,23 @@ var treeGraph = d3.layout.tree()
 var diagonal = d3.svg.diagonal()
   .projection((node) => [node.x, node.y]);
 
+var zoom = (container) => d3.behavior.zoom()
+  .scaleExtent([1, 10])
+  .on('zoom', () => {container.select('g.graph').attr('transform', `translate(${d3.event.translate.join(', ')})`)});
+
 function create () {
-  d3.select('body').append('svg')
+  const svg = d3.select('body').append('svg')
     .attr('width', width + margin.right + margin.left)
-    .attr('height', height + margin.top + margin.bottom)
+    .attr('height', height + margin.top + margin.bottom);
+
+  var rect = svg.append('rect')
+    .attr('width', '100%')
+    .attr('height', '100%')
+    .style('fill', 'none')
+    .style('pointer-events', 'all')
+    .call(zoom(svg));
+
+  svg
     .append('g')
     .attr('transform', `translate(${margin.left}, ${margin.top})`)
     .attr('class', 'graph');
@@ -39,9 +53,7 @@ function destroy () {
   d3.select('svg').remove();
 }
 
-const isGhost = (node) => node.lastMove === 'ghost';
-
-function update(source) {
+function update (source, root = {x0: 0, y0: 0}) {
 
   // Compute the new tree layout.
   let nodes = treeGraph.nodes(source).reverse();
@@ -49,12 +61,33 @@ function update(source) {
 
   nodes.forEach((node) => node.y = node.depth * 180);
 
-  var node = d3.select('.graph').selectAll('g.node').data(nodes, (node) => node.id);
+  var node = d3.select('.graph')
+    .selectAll('g.node')
+    .data(nodes, (node) => node.id);
 
   // Enter the nodes.
   var nodeEnter = node.enter().append('g')
     .attr('class', 'node')
-    .attr('transform', (node) => `translate(${node.x},${node.y})`);
+    .attr('transform', (node) => `translate(${root.x}, ${root.y})`)
+    .on('click', (node) => {
+      if (node.children) {
+        node._children = node.children;
+        node.children = null;
+      } else {
+        node.children = node._children;
+        node._children = null;
+      }
+      update(source, node);
+    });
+
+  var nodeUpdate = node.transition()
+      .duration(500)
+      .attr('transform', (node) => `translate(${node.x}, ${node.y})`);
+
+  var nodeExit = node.exit().transition()
+      .duration(500)
+      .attr('transform', (node) => `translate(${root.x}, ${root.y})`)
+      .remove();
 
   nodeEnter.append('circle')
     .attr('r', 30)
@@ -78,20 +111,30 @@ function update(source) {
     .attr('text-anchor', 'middle')
     .text((node) => `${node.gameState.get('hero', 'x')},${node.gameState.get('hero', 'y')} - ${node.gameState.get('ghost', 'x')},${node.gameState.get('ghost', 'y')}`);
 
-  // text.append('tspan')
-  //   .attr('class', 'antagonist')
-  //   .attr('x', 0)
-  //   .attr('y', 30)
-  //   .attr('text-anchor', 'middle');
-    // .text((node) => (isGhost(node) ? node.player : node.ghost).join(':'))
-
-  // Declare the linksâ€¦
   var link = d3.select('.graph').selectAll('path.link')
     .data(links, (node) => node.target.id);
 
-  // Enter the links.
   link.enter().insert('path', 'g')
     .attr('class', 'link')
+    .attr('d', () => {
+      const origin = {x: root.x0, y: root.y0};
+      return diagonal({source: origin, target: origin});
+    });
+
+  link.transition()
+    .duration(500)
     .attr('d', diagonal);
 
+  link.exit().transition()
+    .duration(500)
+    .attr('d', () => {
+      const origin = {x: source.x, y: source.y};
+      return diagonal({source: origin, target: origin});
+    })
+    .remove();
+
+  nodes.forEach((node) => {
+    node.x0 = node.x;
+    node.y0 = node.y;
+  });
 }
