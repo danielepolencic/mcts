@@ -1,4 +1,5 @@
 const d3 = require('d3');
+const render = require('../game/render');
 
 module.exports = {generate, create, destroy, update};
 
@@ -79,6 +80,12 @@ function update (source, root = {x0: 0, y0: 0}) {
         node._children = null;
       }
       update(source, node);
+    })
+    .on('mouseover', (node) => {
+      render(document.querySelector('.overlay'))(node.gameState);
+    })
+    .on('mouseout', (node) => {
+      document.querySelector('.overlay').innerHTML = '';
     });
 
   var nodeUpdate = node.transition()

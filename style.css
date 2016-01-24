@@ -8,14 +8,29 @@ body {
   display: inline-block;
   border: 2px solid #5a5b5b;
   vertical-align: top;
+  position: relative;
 }
 
+.overlay {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  z-index: 1;
+  opacity: .5;
+}
+
+.overlay:empty {
+  display: none;
+}
+
+.overlay,
 .container {
   width: 400px;
   height: 400px;
   outline: 2px solid #5a5b5b;
 }
 
+.overlay div,
 .container div {
   float: left;
   width: 12.5%;
@@ -24,6 +39,7 @@ body {
   position: relative;
 }
 
+.overlay div img,
 .container div img {
   position: absolute;
   bottom: 15%;
