@@ -36,6 +36,7 @@ const initialGameState = GameState([
 // - don't move back, please
 
 const store = createStore(gameReducer, initialGameState);
+document.querySelector('body').innerHTML = `<div class="wrapper"><div class="container"></div></div>`;
 const container = document.querySelector('.container');
 
 store.subscribe(render(container));
