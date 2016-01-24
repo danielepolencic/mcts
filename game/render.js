@@ -11,7 +11,7 @@ function render (container) {
       const x = gameState.get(entityName, 'x');
       const y = gameState.get(entityName, 'y');
       const avatar = gameState.get(entityName, 'avatar');
-      grid[x + (y * board.maxColumn)] = `<div>${avatar}</div>`;
+      grid[x + (y * board.maxColumn)] = `<div><img src="${avatar}.svg"></div>`;
     });
 
     container.innerHTML = grid.join('');

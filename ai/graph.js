@@ -22,7 +22,8 @@ var margin = {top: 50, right: 120, bottom: 20, left: 120},
   height = 600 - margin.top - margin.bottom;
 
 var treeGraph = d3.layout.tree()
-  .size([width, height]);
+  .size([width, height])
+  .nodeSize([100, 100]);
 
 var diagonal = d3.svg.diagonal()
   .projection((node) => [node.x, node.y]);

@@ -15,16 +15,16 @@ const initialGameState = GameState([
   {entity: 'hero', name: 'player', playerName: 'pole'},
   {entity: 'hero', name: 'target', target: 'reward'},
   {entity: 'hero', name: 'active', active: false},
-  {entity: 'hero', name: 'render', avatar: 'H'},
+  {entity: 'hero', name: 'render', avatar: 'hero'},
   {entity: 'ghost', name: 'position', x: 6, y: 5},
   {entity: 'ghost', name: 'lastMove', move: 'up'},
   {entity: 'ghost', name: 'score', score: 0},
   {entity: 'ghost', name: 'ai', aiName: 'terminator'},
   {entity: 'ghost', name: 'target', target: 'hero'},
   {entity: 'ghost', name: 'active', active: true},
-  {entity: 'ghost', name: 'render', avatar: 'G'},
+  {entity: 'ghost', name: 'render', avatar: 'antihero'},
   {entity: 'reward', name: 'position', x: 6, y: 6},
-  {entity: 'reward', name: 'render', avatar: 'R'}
+  {entity: 'reward', name: 'render', avatar: 'reward'}
 ]);
 
 // TODO:
