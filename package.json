@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "budo index.js --css style.css --open --watch-glob --title MCTS -- -t [ babelify --presets [ es2015 ] ]",
+    "start": "budo index.js --port ${PORT:-3000} --css style.css --open --watch-glob --title MCTS -- -t [ babelify --presets [ es2015 ] ]",
     "test": "browserify test/mcts.js -t [ babelify --presets [ es2015 ] ] --debug | node"
   },
   "author": "",
