@@ -1,4 +1,5 @@
 'use strict';
+
 const actions = require('./game/actions');
 const gameReducer = require('./game/reducers');
 const createStore = require('./game/store');
